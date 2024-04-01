@@ -36,6 +36,7 @@ include $(GEOLIB)/Makefile.geoclaw
 # ---------------------------------------
 
 EXCLUDE_MODULES = \
+  amr_module.f90
 
 EXCLUDE_SOURCES = \
   conck.f
@@ -47,6 +48,7 @@ EXCLUDE_SOURCES = \
 RIEMANN = $(CLAW)/riemann/src
 
 MODULES = \
+  ./amr_module.f90
 
 SOURCES = \
   $(RIEMANN)/rpn2_geoclaw.f \
