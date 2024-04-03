@@ -46,7 +46,7 @@ subroutine conck(level, nvar, naux, time, rest)
             do j  = nghost+1, mjtot-nghost
                 do i  = nghost+1, mitot-nghost
                     totmass = totmass + alloc(iadd(1,i,j)) 
-                    totmom = totmom + alloc(iadd(2,i,j)) + alloc(iadd(3,i,j))
+                    totmom = totmom + sqrt(alloc(iadd(2,i,j))**2 + alloc(iadd(3,i,j))**2)
                 end do
             end do
         else
@@ -54,7 +54,7 @@ subroutine conck(level, nvar, naux, time, rest)
             do j  = nghost+1, mjtot-nghost
                 do i  = nghost+1, mitot-nghost
                     totmass = totmass + alloc(iadd(1,i,j))*alloc(iaddaux(i,j)) 
-                    totmom = totmom + (alloc(iadd(2,i,j)) + alloc(iadd(3,i,j))) * alloc(iaddaux(i,j))
+                    totmom = totmom + (alloc(iadd(2,i,j))**2 + alloc(iadd(3,i,j))**2) * alloc(iaddaux(i,j))
                 end do
             end do
         end if
@@ -71,7 +71,5 @@ subroutine conck(level, nvar, naux, time, rest)
     endif
     write(outunit, out_form_1) time, totmass, totmass-tmass0
     write(outunit, out_form_2) time, totmass, totmom-tmom0
-    ! print out_form_1, time, totmass, totmass-tmass0
-    ! print out_form_2, time, totmom, totmom-tmom0
 
 end subroutine conck
