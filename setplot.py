@@ -72,7 +72,7 @@ def setplot(plotdata=None):
     # ==========================================================================
     regions = {"Full Domain": {"xlimits": (clawdata.lower[0], clawdata.upper[0]),
                                "ylimits": (clawdata.lower[1], clawdata.upper[1]),
-                               "figsize": (6.4 * 2, 4.8)}, 
+                               "figsize": (6.4, 4.8)}, 
               }
 
     for (name, region_dict) in regions.items():
@@ -153,39 +153,45 @@ def setplot(plotdata=None):
     # ========================================================================
     #  Figures for gauges
     # ========================================================================
-    plotfigure = plotdata.new_plotfigure(name='Gauge Surfaces', figno=300,
+    plotfigure = plotdata.new_plotfigure(name='Gauge Surface and Velocity', figno=300,
                                          type='each_gauge')
     plotfigure.show = True
     plotfigure.clf_each_gauge = True
 
-    # Set up for axes in this figure:
-    plotaxes = plotfigure.new_plotaxes()
-    plotaxes.xlimits = [0, 5]
-    # plotaxes.xlabel = "Days from landfall"
-    # plotaxes.ylabel = "Surface (m)"
-    plotaxes.ylimits = [-1, 1]
-    plotaxes.title = 'Surface'
-
     def gauge_afteraxes(cd):
 
         axes = plt.gca()
-        surgeplot.plot_landfall_gauge(cd.gaugesoln, axes)
+        landfall = 0.0
+
+        gauge = cd.gaugesoln
+        t = surgeplot.sec2days(gauge.t - landfall)
+        eta_line = axes.plot(t, gauge.q[3, :], 'b', label=r"$\eta$")
+        axes.plot(t, numpy.zeros(t.shape), 'b-.')
+        axes.set_ylabel('Surface (m)')
+        axes.set_ylim([-1, 4])
+
+        axes2 = axes.twinx()
+        u = numpy.where(gauge.q[0, :] > 0, gauge.q[1, :] / gauge.q[0, :], 0.0)
+        u_line = axes2.plot(t, u, 'r', label=r"$u$")
+        axes2.plot(t, numpy.zeros(t.shape), 'r-.')
+        axes2.set_ylabel("Velocity (m/s)")
+        axes2.set_ylim([-0.01, 0.04])
 
         # Fix up plot - in particular fix time labels
         axes.set_title('Station %s' % cd.gaugeno)
+        axes.set_xlim([-1, 5])
         axes.set_xlabel('Days relative to landfall')
-        axes.set_ylabel('Surface (m)')
-        # axes.set_xlim([0, 5])
-        # axes.set_ylim([-1, 6])
-        axes.set_xticks([ 0, 1, 2, 3, 4, 5])
-        axes.set_xticklabels([r"$0$", r"$1$", r"$2$", r"$3$", r"$4$", r"$5$"])
-        axes.grid(True)
-    plotaxes.afteraxes = gauge_afteraxes
+        axes.set_xticks([-1, 0, 1, 2, 3, 4, 5])
+        axes.set_xticklabels([r"$-1$", r"$0$", r"$1$", r"$2$", r"$3$", r"$4$", r"$5$"])
+        # axes.grid(True)
+        lines = eta_line + u_line
+        axes.legend(lines, [line.get_label() for line in lines])
 
-    # Plot surface as blue curve:
+        plt.gcf().tight_layout()
+
+    plotaxes = plotfigure.new_plotaxes()
+    plotaxes.afteraxes = gauge_afteraxes
     plotitem = plotaxes.new_plotitem(plot_type='1d_plot')
-    # plotitem.plot_var = 3
-    # plotitem.plotstyle = 'b-'
 
     #
     #  Gauge Location Plot
@@ -194,9 +200,9 @@ def setplot(plotdata=None):
         plt.subplots_adjust(left=0.12, bottom=0.06, right=0.97, top=0.97)
         surge_afteraxes(cd)
         gaugetools.plot_gauge_locations(cd.plotdata, gaugenos='all',
-                                        format_string='bx', add_labels=False)
-        gaugetools.plot_gauge_locations(cd.plotdata, gaugenos=[0, 11, 22, 10, 21, 32],
-                                        format_string='ko', add_labels=True)
+                                        format_string='ko', add_labels=False)
+        # gaugetools.plot_gauge_locations(cd.plotdata, gaugenos=range(),
+        #                                 format_string='ko', add_labels=True)
 
     plotfigure = plotdata.new_plotfigure(name="Gauge Locations")
     plotfigure.show = True

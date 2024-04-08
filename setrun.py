@@ -69,13 +69,13 @@ def setrun(claw_pkg='geoclaw'):
 
     # Lower and upper edge of computational domain:
     clawdata.lower[0] = -100e3 * 10      # west longitude
-    clawdata.upper[0] =  100e3 * 10 * 2     # east longitude
+    clawdata.upper[0] =  100e3 * 10      # east longitude
 
     clawdata.lower[1] = -100e3 * 10     # south latitude
-    clawdata.upper[1] =  100e3 * 10    # north latitude
+    clawdata.upper[1] =  100e3 * 10     # north latitude
 
     # Number of grid cells:
-    clawdata.num_cells[0] = 400
+    clawdata.num_cells[0] = 200
     clawdata.num_cells[1] = 200
 
     # ---------------
@@ -309,20 +309,31 @@ def setrun(claw_pkg='geoclaw'):
     regions = rundata.regiondata.regions
     # to specify regions of refinement append lines of the form
     #  [minlevel,maxlevel,t1,t2,x1,x2,y1,y2]
-    num_gauges = 11
-    for i in range(num_gauges):
-        n = i + num_gauges * 2
-        rundata.gaugedata.gauges.append([n, 1000e3 / (num_gauges - 1) * (i - 0.0), 
-                                            -250e3, 
-                                            0.0, rundata.clawdata.tfinal])
-        n = i
-        rundata.gaugedata.gauges.append([n, 1000e3 / (num_gauges - 1) * (i - 0.0), 
-                                            0.0, 
-                                            0.0, rundata.clawdata.tfinal])
-        n = i + num_gauges
-        rundata.gaugedata.gauges.append([n, 1000e3 / (num_gauges - 1) * (i - 0.0), 
-                                            250e3, 
-                                            0.0, rundata.clawdata.tfinal])
+    # Left boundary
+    # rundata.gaugedata.gauges.append([0, rundata.clawdata.lower[0], 0.0,
+    #                                  rundata.clawdata.t0, 
+    #                                  rundata.clawdata.tfinal])
+    # Centered cross
+    rundata.gaugedata.gauges.append([1, -100e3, 0.0,
+                                     rundata.clawdata.t0, 
+                                     rundata.clawdata.tfinal])
+    rundata.gaugedata.gauges.append([2, 0.0, 0.0,
+                                     rundata.clawdata.t0, 
+                                     rundata.clawdata.tfinal])
+    rundata.gaugedata.gauges.append([3, 100e3, 0.0,
+                                     rundata.clawdata.t0, 
+                                     rundata.clawdata.tfinal])
+    rundata.gaugedata.gauges.append([4, 0.0, -100e3,
+                                     rundata.clawdata.t0, 
+                                     rundata.clawdata.tfinal])
+    rundata.gaugedata.gauges.append([5, 0.0,  100e3,
+                                     rundata.clawdata.t0, 
+                                     rundata.clawdata.tfinal])
+
+    # Right boundary
+    # rundata.gaugedata.gauges.append([6, rundata.clawdata.upper[0], 0.0,
+    #                                  rundata.clawdata.t0, 
+    #                                  rundata.clawdata.tfinal])
 
     # Force the gauges to also record the wind and pressure fields
     rundata.gaugedata.aux_out_fields = [4, 5, 6]
@@ -397,13 +408,13 @@ def setgeo(rundata):
     data.drag_law = 1
     data.pressure_forcing = True
 
-    data.display_landfall_time = False
+    data.display_landfall_time = True
 
     # AMR parameters, m/s and m respectively
     data.wind_refine = [20.0, 40.0, 60.0]
     data.R_refine = [60.0e3, 40e3, 20e3]
 
-    # Storm parameters - Parameterized storm (Holland 1980)
+    # Storm parameters - Parameterized storm
     data.storm_specification_type = 'plane-wave'  # (type 1)
     data.storm_file = os.path.join(os.getcwd(), 'synthetic.storm')
     
@@ -420,8 +431,9 @@ def setgeo(rundata):
                            numpy.ones(t.shape))
     def storm_x(t):
         # storm_v = 10e3
-        storm_v = 0.0
-        return -50e3 + storm_v * t / 60**2
+        storm_v = 0
+        storm_x0 = 0.0
+        return 0.0 + storm_v * t / 60**2
 
 
     storm.eye_location = numpy.array([[storm_x(t), 0.0] for t in storm.t])
