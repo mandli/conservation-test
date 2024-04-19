@@ -36,12 +36,12 @@ include $(GEOLIB)/Makefile.geoclaw
 # ---------------------------------------
 
 EXCLUDE_MODULES = \
-  amr_module.f90 \
-  model_storm_module.f90 \
-  storm_module.f90
+  amr_module.f90
 
 EXCLUDE_SOURCES = \
-  conck.f
+  conck.f \
+  flux2fw.f \
+  qinit.f90
 
 # ----------------------------------------
 # List of custom sources for this program:
@@ -50,15 +50,17 @@ EXCLUDE_SOURCES = \
 RIEMANN = $(CLAW)/riemann/src
 
 MODULES = \
-  ./amr_module.f90 \
-  ./model_storm_module.f90 \
-  ./storm_module.f90
+  ./amr_module.f90
 
 SOURCES = \
-  $(RIEMANN)/rpn2_geoclaw.f \
-  $(RIEMANN)/rpt2_geoclaw.f \
-  $(RIEMANN)/geoclaw_riemann_utils.f \
-  ./conck.f90
+  ./rpt2_geoclaw.f \
+  ./geoclaw_riemann_utils.f \
+  ./flux2fw.f \
+  ./conck.f90 \
+  ./qinit.f90 \
+  ./rpn2_geoclaw.f
+#   ./rpn2_swe_hll.f90
+  
 
 #-------------------------------------------------------------------
 # Include Makefile containing standard definitions and make options:

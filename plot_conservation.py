@@ -11,6 +11,8 @@ def parse_amr_log(path=None):
 
     if path is None:
         path = os.path.join(os.getcwd(), "_output", "fort.amr")
+    else:
+        path = os.path.join(path, "fort.amr")
 
     t = []
     mass = []
@@ -43,86 +45,91 @@ def parse_amr_log(path=None):
     momentum_diff = numpy.array(momentum_diff)
     u2_diff = numpy.array(u2_diff)
 
-    return t, mass, momentum, u2, mass_diff, momentum_diff, u2_diff
+    return [t, mass, momentum, u2, mass_diff, momentum_diff, u2_diff]
 
-def plot_conservation():
 
-    data = parse_amr_log()
-    t = surgeplot.sec2days(data[0])
+# def plot_conservation(experiments, base_path=None):
 
-    figs = []
+#     if base_path is None:
+#         base_path = os.getcwd()
 
-    # Plot mass
-    figs.append(plt.figure())
-    axes = figs[-1].add_subplot(1, 1, 1)
-    axes.plot(t, data[1] / data[1][0] - 1.0, 'b-', label='Mass')
-    axes.plot(t, data[4] / data[1][0], 'r--', label='Difference')
-    axes.ticklabel_format(style="plain", useMathText=True)
-    axes.set_title("Mass")
-    axes.legend()
+#     t2boundary = 100e3 / numpy.sqrt(9.8 * 3000)
 
-    axes.set_xlim([-1, 5])
-    axes.set_xlabel('Days relative to landfall')
-    axes.set_xticks([-1, 0, 1, 2, 3, 4, 5])
-    axes.set_xticklabels([r"$-1$", r"$0$", r"$1$", r"$2$", r"$3$", r"$4$", r"$5$"])
-    axes.grid(True)
+#     fig, axes = plt.subplots(3, len(experiments))
+#     if len(experiments) == 1:
+#         print(axes.shape)
+#     titles = ['Mass', 'Momentum', r"$|\vec{u}|^2$"]
+#     for (j, experiment) in enumerate(experiments):
 
-    figs.append(plt.figure())
-    axes = figs[-1].add_subplot(1, 1, 1)
-    axes.plot(t, data[2], 'b-', label='Momentum')
-    axes.plot(t, data[5], 'r--', label='Difference')
-    axes.ticklabel_format(style="plain", useMathText=True)
-    axes.set_title("Momentum")
-    axes.legend()
+#         # experiment_string = f"{experiment[0]}_{experiment[1]}_{experiment[2]}"
+#         # path = os.path.join(base_path, experiment_string + "_output")
+#         path = os.path.join(base_path, "_output")
+#         data  = parse_amr_log(path)
+#         t = data[0]
 
-    axes.set_xlim([-1, 5])
-    axes.set_xlabel('Days relative to landfall')
-    axes.set_xticks([-1, 0, 1, 2, 3, 4, 5])
-    axes.set_xticklabels([r"$-1$", r"$0$", r"$1$", r"$2$", r"$3$", r"$4$", r"$5$"])
-    axes.grid(True)
+#         # Modify mass plot to do difference
+#         data[1] = data[1] / data[1][0] - 1.0
 
-    figs.append(plt.figure())
-    axes = figs[-1].add_subplot(1, 1, 1)
-    axes.plot(t, data[3], 'b-', label=r'$|\vec{u}|^2$')
-    axes.plot(t, data[6], 'r--', label='Difference')
-    axes.ticklabel_format(style="plain", useMathText=True)
-    axes.set_title(r"$|\vec{u}|^2$")
-    axes.legend()
-    
-    axes.set_xlim([-1, 5])
-    axes.set_xlabel('Days relative to landfall')
-    axes.set_xticks([-1, 0, 1, 2, 3, 4, 5])
-    axes.set_xticklabels([r"$-1$", r"$0$", r"$1$", r"$2$", r"$3$", r"$4$", r"$5$"])
-    axes.grid(True)
+#         for (i, field_title) in enumerate(titles):
+#             axes[i][j].plot(t, data[i + 1], 'b-', label=field_title)
+#             axes[i][j].ticklabel_format(style="plain", useMathText=True)
+#             axes[i][j].set_title(field_title + " - " + experiment_string)
+#             axes[i][j].grid(True)
 
-    print("Mass Max, Diff = (%s, %s)" % (numpy.max(data[1]), numpy.max(data[4])))
-    print("Momentum Max, Diff = (%s, %s)" % (numpy.max(data[2]), numpy.max(data[5])))
-    print("u^2 Max, Diff = (%s, %s)" % (numpy.max(data[3]), numpy.max(data[6])))
+#     return fig
 
-    # # Mass difference
-    # figs.append(plt.figure())
-    # axes = figs[1].add_subplot(1, 1, 1)
-    # axes.plot(data[0], data[3] / data[1][0])
-    # axes.ticklabel_format(style="plain", useMathText=True)
-    # axes.set_title("Mass Difference")
 
-    # # Plot momentum
-    # figs.append(plt.figure())
-    # axes = figs[2].add_subplot(1, 1, 1)
-    # axes.plot(data[0], data[2] / data[2][0])
-    # axes.ticklabel_format(style="plain", useMathText=True)
-    # axes.set_title("Total Momentum")
+def plot_conservation(base_path=None):
 
-    # # Momentum difference
-    # figs.append(plt.figure())
-    # axes = figs[3].add_subplot(1, 1, 1)
-    # axes.plot(data[0], data[4] / data[2][0])
-    # axes.ticklabel_format(style="plain", useMathText=True)
-    # axes.set_title("Momentum Difference")
+    if base_path is None:
+        base_path = os.getcwd()
 
-    return figs
+    t2boundary = 100e3 / numpy.sqrt(9.8 * 3000)
+
+    fig, axs = plt.subplots(3, sharex=True)
+    titles = ['Mass', 'Momentum', r"$|\vec{u}|^2$"]
+    path = os.path.join(base_path, "_output")
+    data  = parse_amr_log(path)
+    t = data[0]
+
+    # Modify mass plot to do difference
+    data[1] = data[1] / data[1][0] - 1.0
+
+    for (i, field_title) in enumerate(titles):
+        axs[i].plot(t, data[i + 1], 'b-', label=field_title)
+        axs[i].ticklabel_format(style="plain", useMathText=True)
+        axs[i].set_title(field_title)
+        axs[i].grid(True)
+        axs[i].set_xlim([0, 20])
+
+    return fig
 
 
 if __name__ == '__main__':
+    # base_path = os.path.join(os.environ.get('DATA_PATH', os.getcwd()),
+    #                          "conservation_tests")
+    experiments = []
+    # Experiment 1
+    # for init_condition in ['hump']:
+    #     for order in [1, 2]:
+    #         for transverse_waves in [0, 1, 2]:
+    #             experiments.append([order, transverse_waves, init_condition])
+
+    # Experiment 2
+    # for init_condition in ['hump', 'pressure']:
+    #     for order in [1, 2]:
+    #         for transverse_waves in [0]:
+    #             experiments.append([order, transverse_waves, init_condition])
+
+    # Experiment 3
+    # for init_condition in ['step',]:
+    #     for order in [1]:
+    #         for transverse_waves in [0]:
+    #             experiments.append([order, transverse_waves, init_condition])
+
+    # plot_conservation(experiments, base_path=os.getcwd())
+
+    # Direct Local
     plot_conservation()
+
     plt.show()

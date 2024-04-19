@@ -1,7 +1,3 @@
-
-from __future__ import absolute_import
-from __future__ import print_function
-
 import os
 
 import numpy
@@ -50,16 +46,16 @@ def setplot(plotdata=None):
     friction_data.read(os.path.join(plotdata.outdir, 'friction.data'))
 
     # Load storm track
-    track = surgeplot.track_data(os.path.join(plotdata.outdir, 'fort.track'))
+    # track = surgeplot.track_data(os.path.join(plotdata.outdir, 'fort.track'))
 
     # Set afteraxes function
-    def surge_afteraxes(cd):
-        surgeplot.surge_afteraxes(cd, track, plot_direction=False,
-                                             kwargs={"markersize": 4})
+    # def surge_afteraxes(cd):
+    #     surgeplot.surge_afteraxes(cd, track, plot_direction=False,
+    #                                          kwargs={"markersize": 4})
 
     # Color limits
-    surface_limits = [-1.0, 1.0]
-    speed_limits = [0.0, 2.5e-2]
+    surface_limits = [-0.5, 0.5]
+    speed_limits = [0.0, 0.55]
     wind_limits = [0, 64]
     pressure_limits = [935, 1013]
     friction_bounds = [0.01, 0.04]
@@ -79,12 +75,12 @@ def setplot(plotdata=None):
 
         # Surface Figure
         plotfigure = plotdata.new_plotfigure(name="Surface - %s" % name)
-        plotfigure.kwargs = {"figsize": region_dict['figsize']}
+        # plotfigure.kwargs = {"figsize": region_dict['figsize']}
         plotaxes = plotfigure.new_plotaxes()
         plotaxes.title = "Surface"
         plotaxes.xlimits = region_dict["xlimits"]
         plotaxes.ylimits = region_dict["ylimits"]
-        plotaxes.afteraxes = surge_afteraxes
+        # plotaxes.afteraxes = surge_afteraxes
 
         surgeplot.add_surface_elevation(plotaxes, bounds=surface_limits)
         surgeplot.add_land(plotaxes, bounds=[0.0, 20.0])
@@ -93,12 +89,12 @@ def setplot(plotdata=None):
 
         # Speed Figure
         plotfigure = plotdata.new_plotfigure(name="Currents - %s" % name)
-        plotfigure.kwargs = {"figsize": region_dict['figsize']}
+        # plotfigure.kwargs = {"figsize": region_dict['figsize']}
         plotaxes = plotfigure.new_plotaxes()
         plotaxes.title = "Currents"
         plotaxes.xlimits = region_dict["xlimits"]
         plotaxes.ylimits = region_dict["ylimits"]
-        plotaxes.afteraxes = surge_afteraxes
+        # plotaxes.afteraxes = surge_afteraxes
 
         surgeplot.add_speed(plotaxes, bounds=speed_limits)
         surgeplot.add_land(plotaxes, bounds=[0.0, 20.0])
@@ -132,7 +128,7 @@ def setplot(plotdata=None):
     plotaxes.xlimits = regions['Full Domain']['xlimits']
     plotaxes.ylimits = regions['Full Domain']['ylimits']
     plotaxes.title = "Pressure Field"
-    plotaxes.afteraxes = surge_afteraxes
+    # plotaxes.afteraxes = surge_afteraxes
     plotaxes.scaled = True
     surgeplot.add_pressure(plotaxes, bounds=pressure_limits)
     surgeplot.add_land(plotaxes, bounds=[0.0, 20.0])
@@ -145,7 +141,7 @@ def setplot(plotdata=None):
     plotaxes.xlimits = regions['Full Domain']['xlimits']
     plotaxes.ylimits = regions['Full Domain']['ylimits']
     plotaxes.title = "Wind Field"
-    plotaxes.afteraxes = surge_afteraxes
+    # plotaxes.afteraxes = surge_afteraxes
     plotaxes.scaled = True
     surgeplot.add_wind(plotaxes, bounds=wind_limits)
     surgeplot.add_land(plotaxes, bounds=[0.0, 20.0])
@@ -161,29 +157,28 @@ def setplot(plotdata=None):
     def gauge_afteraxes(cd):
 
         axes = plt.gca()
-        landfall = 0.0
 
         gauge = cd.gaugesoln
-        t = surgeplot.sec2days(gauge.t - landfall)
+        t = gauge.t
         eta_line = axes.plot(t, gauge.q[3, :], 'b', label=r"$\eta$")
         axes.plot(t, numpy.zeros(t.shape), 'b-.')
         axes.set_ylabel('Surface (m)')
-        axes.set_ylim([-1, 4])
+        axes.set_ylim([-0.2, 0.2])
 
         axes2 = axes.twinx()
         u = numpy.where(gauge.q[0, :] > 0, gauge.q[1, :] / gauge.q[0, :], 0.0)
         u_line = axes2.plot(t, u, 'r', label=r"$u$")
         axes2.plot(t, numpy.zeros(t.shape), 'r-.')
         axes2.set_ylabel("Velocity (m/s)")
-        axes2.set_ylim([-0.01, 0.04])
+        axes2.set_ylim([-0.5, 0.5])
 
         # Fix up plot - in particular fix time labels
         axes.set_title('Station %s' % cd.gaugeno)
-        axes.set_xlim([-1, 5])
-        axes.set_xlabel('Days relative to landfall')
-        axes.set_xticks([-1, 0, 1, 2, 3, 4, 5])
-        axes.set_xticklabels([r"$-1$", r"$0$", r"$1$", r"$2$", r"$3$", r"$4$", r"$5$"])
-        # axes.grid(True)
+        axes.set_xlim([clawdata.t0, clawdata.tfinal])
+        # axes.set_xlabel('Days relative to landfall')
+        # axes.set_xticks([-1, 0, 1, 2, 3, 4, 5])
+        # axes.set_xticklabels([r"$-1$", r"$0$", r"$1$", r"$2$", r"$3$", r"$4$", r"$5$"])
+        axes.grid(True)
         lines = eta_line + u_line
         axes.legend(lines, [line.get_label() for line in lines])
 
@@ -192,16 +187,16 @@ def setplot(plotdata=None):
     plotaxes = plotfigure.new_plotaxes()
     plotaxes.afteraxes = gauge_afteraxes
     plotitem = plotaxes.new_plotitem(plot_type='1d_plot')
+    plotitem.show = False
 
     #
     #  Gauge Location Plot
     #
     def gauge_location_afteraxes(cd):
         plt.subplots_adjust(left=0.12, bottom=0.06, right=0.97, top=0.97)
-        surge_afteraxes(cd)
         gaugetools.plot_gauge_locations(cd.plotdata, gaugenos='all',
                                         format_string='ko', add_labels=False)
-        # gaugetools.plot_gauge_locations(cd.plotdata, gaugenos=range(),
+        # gaugetools.plot_gauge_locations(cd.plotdata, gaugenos=[1, 5, 9],
         #                                 format_string='ko', add_labels=True)
 
     plotfigure = plotdata.new_plotfigure(name="Gauge Locations")

@@ -7,9 +7,6 @@ that will be read in by the Fortran code.
 
 """
 
-from __future__ import absolute_import
-from __future__ import print_function
-
 import os
 import datetime
 import shutil
@@ -17,6 +14,7 @@ import gzip
 
 import numpy
 
+import clawpack.geoclaw.topotools as topotools
 from clawpack.geoclaw.surge.storm import Storm
 import clawpack.clawutil as clawutil
 
@@ -25,6 +23,8 @@ import clawpack.clawutil as clawutil
 def days2seconds(days):
     return days * 60.0**2 * 24.0
 
+def eta(x, y, A=1.0, sigma=50e3, x0=0.0):
+    return A * numpy.exp(-(x - x0)**2 / sigma**2)
 
 # Scratch directory for storing topo and storm files:
 scratch_dir = os.path.join(os.environ["CLAW"], 'geoclaw', 'scratch')
@@ -68,15 +68,15 @@ def setrun(claw_pkg='geoclaw'):
     clawdata.num_dim = num_dim
 
     # Lower and upper edge of computational domain:
-    clawdata.lower[0] = -100e3 * 10      # west longitude
-    clawdata.upper[0] =  100e3 * 10      # east longitude
+    clawdata.lower[0] = -40
+    clawdata.upper[0] =  40
 
-    clawdata.lower[1] = -100e3 * 10     # south latitude
-    clawdata.upper[1] =  100e3 * 10     # north latitude
+    clawdata.lower[1] = -10
+    clawdata.upper[1] =  10
 
     # Number of grid cells:
-    clawdata.num_cells[0] = 200
-    clawdata.num_cells[1] = 200
+    clawdata.num_cells[0] = 400
+    clawdata.num_cells[1] = 10
 
     # ---------------
     # Size of system:
@@ -96,7 +96,7 @@ def setrun(claw_pkg='geoclaw'):
     # -------------
     # Initial time:
     # -------------
-    clawdata.t0 = days2seconds(-1)
+    clawdata.t0 = 0.0
 
     # Restart from checkpoint file of a previous run?
     # If restarting, t0 above should be from original run, and the
@@ -115,13 +115,14 @@ def setrun(claw_pkg='geoclaw'):
     # The solution at initial time t0 is always written in addition.
 
     clawdata.output_style = 1
-    clawdata.tfinal = days2seconds(5)
 
     if clawdata.output_style == 1:
         # Output nout frames at equally spaced times up to tfinal:
-        recurrence = 4
-        clawdata.num_output_times = int((clawdata.tfinal - clawdata.t0) *
-                                        recurrence / (60**2 * 24))
+        # recurrence = 4
+        # clawdata.num_output_times = int((clawdata.tfinal - clawdata.t0) *
+        #                                 recurrence / (60**2 * 24))
+        clawdata.num_output_times = 40
+        clawdata.tfinal = 20
 
         clawdata.output_t0 = True  # output at initial (or restart) time?
 
@@ -225,8 +226,8 @@ def setrun(claw_pkg='geoclaw'):
     #   2 => periodic (must specify this at both boundaries)
     #   3 => solid wall for systems where q(2) is normal velocity
 
-    clawdata.bc_lower[0] = 'wall'
-    clawdata.bc_upper[0] = 'wall'
+    clawdata.bc_lower[0] = 'extrap'
+    clawdata.bc_upper[0] = 'extrap'
 
     clawdata.bc_lower[1] = 'wall'
     clawdata.bc_upper[1] = 'wall'
@@ -313,30 +314,28 @@ def setrun(claw_pkg='geoclaw'):
     # rundata.gaugedata.gauges.append([0, rundata.clawdata.lower[0], 0.0,
     #                                  rundata.clawdata.t0, 
     #                                  rundata.clawdata.tfinal])
-    # Centered cross
-    rundata.gaugedata.gauges.append([1, -100e3, 0.0,
+    # Center line
+    rundata.gaugedata.gauges.append([0, rundata.clawdata.lower[0], 0.0,
                                      rundata.clawdata.t0, 
                                      rundata.clawdata.tfinal])
-    rundata.gaugedata.gauges.append([2, 0.0, 0.0,
+    rundata.gaugedata.gauges.append([1, -5, 0.0,
                                      rundata.clawdata.t0, 
                                      rundata.clawdata.tfinal])
-    rundata.gaugedata.gauges.append([3, 100e3, 0.0,
+    rundata.gaugedata.gauges.append([2, -2.5, 0.0,
                                      rundata.clawdata.t0, 
                                      rundata.clawdata.tfinal])
-    rundata.gaugedata.gauges.append([4, 0.0, -100e3,
+    rundata.gaugedata.gauges.append([3, 0.0, 0.0,
                                      rundata.clawdata.t0, 
                                      rundata.clawdata.tfinal])
-    rundata.gaugedata.gauges.append([5, 0.0,  100e3,
+    rundata.gaugedata.gauges.append([4, 2.5, 0.0,
                                      rundata.clawdata.t0, 
                                      rundata.clawdata.tfinal])
-
-    # Right boundary
-    # rundata.gaugedata.gauges.append([6, rundata.clawdata.upper[0], 0.0,
-    #                                  rundata.clawdata.t0, 
-    #                                  rundata.clawdata.tfinal])
-
-    # Force the gauges to also record the wind and pressure fields
-    rundata.gaugedata.aux_out_fields = [4, 5, 6]
+    rundata.gaugedata.gauges.append([5, 5, 0.0,
+                                     rundata.clawdata.t0, 
+                                     rundata.clawdata.tfinal])
+    rundata.gaugedata.gauges.append([6, rundata.clawdata.upper[0], 0.0,
+                                     rundata.clawdata.t0, 
+                                     rundata.clawdata.tfinal])
 
     # ------------------------------------------------------------------
     # GeoClaw specific parameters:
@@ -389,7 +388,7 @@ def setgeo(rundata):
     topo_data.x1 = rundata.clawdata.lower[0] + 2e8
     topo_data.x2 = rundata.clawdata.lower[0] + 3e8
 
-    topo_data.basin_depth = -3e3
+    topo_data.basin_depth = -1.0
     topo_data.shelf_depth = -200.0
     topo_data.beach_slope = 0.05
 
@@ -406,63 +405,9 @@ def setgeo(rundata):
     # Source term controls
     data.wind_forcing = False
     data.drag_law = 1
-    data.pressure_forcing = True
+    data.pressure_forcing = False
 
-    data.display_landfall_time = True
-
-    # AMR parameters, m/s and m respectively
-    data.wind_refine = [20.0, 40.0, 60.0]
-    data.R_refine = [60.0e3, 40e3, 20e3]
-
-    # Storm parameters - Parameterized storm
-    data.storm_specification_type = 'plane-wave'  # (type 1)
-    data.storm_file = os.path.join(os.getcwd(), 'synthetic.storm')
-    
-    # Construct synthetic storm
-    storm = Storm()
-    storm.time_offset = 0.0
-    num_forecasts = 10
-    storm.t = numpy.linspace(rundata.clawdata.t0, rundata.clawdata.tfinal, 
-                num_forecasts)
-    def ramp_function(t):
-        c = days2seconds(1)
-        return numpy.where(t < 0.0, 
-                           -2 / c**3 * t**3 - 3 / c**2 * t**2 + 1, 
-                           numpy.ones(t.shape))
-    def storm_x(t):
-        # storm_v = 10e3
-        storm_v = 0
-        storm_x0 = 0.0
-        return 0.0 + storm_v * t / 60**2
-
-
-    storm.eye_location = numpy.array([[storm_x(t), 0.0] for t in storm.t])
-    storm.max_wind_speed = numpy.array([64.0 for t in storm.t])
-
-    # Max Wind Radius
-    C0 = 218.3784
-    storm.max_wind_radius = numpy.empty(num_forecasts)
-    for (n, t) in enumerate(storm.t):
-        storm.max_wind_radius[n] = (C0 - 1.2014 * storm.max_wind_speed[n]
-            + (storm.max_wind_speed[n] / 10.9884)**2 
-            - (storm.max_wind_speed[n] / 35.3052)**3 
-            - 145.5090 * numpy.cos(storm.eye_location[n, 1] * 0.0174533) ) * 1e3
-
-    # Add central pressure - From Kossin, J. P. WAF 2015
-    a = -0.0025
-    b = -0.36
-    c = 1021.36
-    storm.central_pressure = geo_data.ambient_pressure - (geo_data.ambient_pressure - 940e2) * ramp_function(storm.t)
-    # storm.central_pressure = numpy.empty(num_forecasts)
-    # for (n, t) in enumerate(storm.t):
-    #     storm.central_pressure[n] = ( a * storm.max_wind_speed[n]**2 
-    #             + b * storm.max_wind_speed[n] + c) * ramp_function(t)
-
-    # Extent of storm set to 300 km 
-    storm.storm_radius = 300e3 * numpy.ones(num_forecasts)
-
-    # Write out storm
-    storm.write(data.storm_file, file_format='geoclaw')
+    data.display_landfall_time = False
 
     return rundata
     # end of function setgeo
