@@ -54,11 +54,8 @@ def setplot(plotdata=None):
     #                                          kwargs={"markersize": 4})
 
     # Color limits
-    surface_limits = [-0.5, 0.5]
+    surface_limits = [-0.1, 0.1]
     speed_limits = [0.0, 0.55]
-    wind_limits = [0, 64]
-    pressure_limits = [935, 1013]
-    friction_bounds = [0.01, 0.04]
 
     def friction_after_axes(cd):
         plt.title(r"Manning's $n$ Coefficient")
@@ -100,51 +97,55 @@ def setplot(plotdata=None):
         surgeplot.add_land(plotaxes, bounds=[0.0, 20.0])
         plotaxes.plotitem_dict['speed'].amr_patchedges_show = [0] * 10
         plotaxes.plotitem_dict['land'].amr_patchedges_show = [0] * 10
-    #
-    # Friction field
-    #
-    plotfigure = plotdata.new_plotfigure(name='Friction')
-    plotfigure.show = friction_data.variable_friction and False
 
+    # Transect
+    def plot_transect(current_data, y0=0.0):
+        plt.gca().grid(True) 
+        # y = current_data.y
+        # dy = current_data.dy
+        # index = numpy.where(abs(y - y0) <= dy / 2.0)[1][0]
+        # x = current_data.x[:, index]
+        # q = current_data.q
+        # eta = q[3, :, index]
+        # u = numpy.where(q[0, :] > 0, q[1, :] / q[0, :], 0.0)
+
+        # axs = [None, None]
+        # axs[0] = plt.gca()
+
+        # eta_line = axs[0].plot(x, eta, 'b', label=r"$\eta$")
+        # axs[0].set_ylabel('Surface (m)')
+        # axs[0].set_ylim(surface_limits)
+
+        # axs[1] = axs[0].twinx()
+        # u_line = axs[1].plot(x, u, 'r', label=r"$u$")
+        # axs[1].set_ylabel("Velocity (m/s)")
+        # axs[1].set_ylim([-speed_limits[1], speed_limits[1]])
+        
+        # axs[0].grid(True)
+        # lines = eta_line + u_line
+        # axs[0].legend(lines, [line.get_label() for line in lines])
+
+
+    def transect(current_data, field=3, y0=0.0):
+        y = current_data.y
+        dy = current_data.dy
+        index = numpy.where(abs(y - y0) <= dy / 2.0)[1][0]
+        return current_data.x[:, index], current_data.q[field, :, index]
+
+    plotfigure = plotdata.new_plotfigure(name="Surface Transect")
+    plotfigure.show = True
     plotaxes = plotfigure.new_plotaxes()
-    plotaxes.xlimits = regions['Full Domain']['xlimits']
-    plotaxes.ylimits = regions['Full Domain']['ylimits']
-    # plotaxes.title = "Manning's N Coefficient"
-    plotaxes.afteraxes = friction_after_axes
-    plotaxes.scaled = True
+    plotaxes.title = "Surface Transect"
+    plotaxes.xlabel = "x (m)"
+    plotaxes.ylabel = r"$\eta$"
+    plotaxes.xlimits = [clawdata.lower[0], clawdata.upper[0]]
+    plotaxes.ylimits = surface_limits
+    plotaxes.afteraxes = plot_transect
 
-    surgeplot.add_friction(plotaxes, bounds=friction_bounds, shrink=0.9)
-    plotaxes.plotitem_dict['friction'].amr_patchedges_show = [0] * 10
-    plotaxes.plotitem_dict['friction'].colorbar_label = "$n$"
-
-    #
-    #  Hurricane Forcing fields
-    #
-    # Pressure field
-    plotfigure = plotdata.new_plotfigure(name='Pressure')
-    plotfigure.show = surge_data.pressure_forcing and True
-
-    plotaxes = plotfigure.new_plotaxes()
-    plotaxes.xlimits = regions['Full Domain']['xlimits']
-    plotaxes.ylimits = regions['Full Domain']['ylimits']
-    plotaxes.title = "Pressure Field"
-    # plotaxes.afteraxes = surge_afteraxes
-    plotaxes.scaled = True
-    surgeplot.add_pressure(plotaxes, bounds=pressure_limits)
-    surgeplot.add_land(plotaxes, bounds=[0.0, 20.0])
-
-    # Wind field
-    plotfigure = plotdata.new_plotfigure(name='Wind Speed')
-    plotfigure.show = surge_data.wind_forcing and False
-
-    plotaxes = plotfigure.new_plotaxes()
-    plotaxes.xlimits = regions['Full Domain']['xlimits']
-    plotaxes.ylimits = regions['Full Domain']['ylimits']
-    plotaxes.title = "Wind Field"
-    # plotaxes.afteraxes = surge_afteraxes
-    plotaxes.scaled = True
-    surgeplot.add_wind(plotaxes, bounds=wind_limits)
-    surgeplot.add_land(plotaxes, bounds=[0.0, 20.0])
+    plotitem = plotaxes.new_plotitem(plot_type="1d_from_2d_data")
+    plotitem.map_2d_to_1d = transect
+    plotitem.plotstyle = 'ko-'
+    plotitem.kwargs = {"markersize": 3}
 
     # ========================================================================
     #  Figures for gauges

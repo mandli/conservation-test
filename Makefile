@@ -1,4 +1,3 @@
-
 # Makefile for Clawpack code in this directory.
 # This version only sets the local files and frequently changed
 # options, and then includes the standard makefile pointed to by CLAWMAKE.
@@ -20,7 +19,9 @@ SETPLOT_FILE = setplot.py      # File containing function to set plots
 PLOTDIR = _plots               # Directory for plots
 
 # Environment variable FC should be set to fortran compiler, e.g. gfortran
-FFLAGS ?=
+
+# Compiler flags can be specified here or set as an environment variable
+FFLAGS ?= 
 
 # ---------------------------------
 # package sources for this program:
@@ -39,31 +40,32 @@ EXCLUDE_MODULES = \
   amr_module.f90
 
 EXCLUDE_SOURCES = \
-  conck.f \
-  flux2fw.f \
+  conck.f90 \
   qinit.f90
 
 # ----------------------------------------
 # List of custom sources for this program:
 # ----------------------------------------
 
-RIEMANN = $(CLAW)/riemann/src
 
 MODULES = \
   ./amr_module.f90
 
 SOURCES = \
-  ./rpt2_geoclaw.f \
-  ./geoclaw_riemann_utils.f \
-  ./flux2fw.f \
   ./conck.f90 \
   ./qinit.f90 \
-  ./rpn2_geoclaw.f
-#   ./rpn2_swe_hll.f90
+  $(CLAW)/riemann/src/rpt2_geoclaw.f \
+  $(CLAW)/riemann/src/geoclaw_riemann_utils.f \
+  $(CLAW)/riemann/src/rpn2_geoclaw.f
+
   
+#   ./rpn2_swe_hll.f90 \
 
 #-------------------------------------------------------------------
 # Include Makefile containing standard definitions and make options:
 include $(CLAWMAKE)
 
-### DO NOT remove this line - make depends on it ###
+# Construct the topography data
+.PHONY:
+
+

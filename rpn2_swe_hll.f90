@@ -1,6 +1,6 @@
 subroutine rpn2(ixy,maxm,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,fwave,s,amdq,apdq)
 
-     use geoclaw_module, only: g => grav, dry_tolerance, rho
+     use geoclaw_module, only: g => grav, dry_tolerance
      use, intrinsic :: iso_fortran_env, only: real64
 
      implicit none
@@ -20,7 +20,9 @@ subroutine rpn2(ixy,maxm,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,fwave,s,amdq,ap
      ! Local
      integer :: m, i, mw, mu, nv
      real(kind=real64) :: h_R, h_L, hu_R, hu_L, hv_R, hv_L, u_R, u_L, v_R, v_L
-     real(kind=real64) :: b_R, b_L, s_L, s_R, u_hat, c_hat
+     real(kind=real64) :: b_R, b_L, s_L, s_R, u_hat, c_hat, delta(3), beta(3)
+
+     real(kind=real64) :: fwave_sum(3)
 
      ! Primary loop through Riemann problems
      fwave = 0.0_real64
@@ -69,13 +71,54 @@ subroutine rpn2(ixy,maxm,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,fwave,s,amdq,ap
                          / (sqrt(g * h_R) + sqrt(g * h_L))
           c_hat = sqrt(0.5_real64 * g * (h_R + h_L))
 
+          ! Jump in flux
+          delta(1) = hu_R - hu_L
+          delta(2) = -u_R**2 + 0.5_real64 * g * h_R**2                &
+                         - (-u_L**2 + 0.5_real64 * g * h_L**2) - 0.0_real64
+          delta(3) = h_R * u_R * v_R - h_L * u_L * v_R
+
           ! HLLC
+          ! s(1, i) = min(s_L, u_hat - c_hat)
           s(1, i) = s_L
-          s(2, i) = s_R
-          s(3, i) = 0.5_real64 * (s(1, i) + s(2, i))
-          fwave(:, 1, i) = 0.0_real64
-          fwave(:, 2, i) = 0.0_real64
-          fwave(:, 3, i) = 0.0_real64
+          s(2, i) = 0.5_real64 * (s(1, i) + s(2, i))
+          ! s(3, i) = max(s_R, u_hat + c_hat)
+          s(3, i) = s_R
+          beta(1) = (delta(2) - s(3, i) * delta(1)) / (s(1, i) - s(3, i))
+          beta(3) = delta(1) - beta(1)
+          beta(2) = delta(3) - v_L * beta(1) - v_R * beta(3)
+
+          ! Wave 1
+          fwave(1, 1, i) = beta(1)
+          fwave(mu, 1, i) = beta(1) * s(1, i)
+          fwave(nv, 1, i) = beta(1) * v_L
+
+          ! Wave 2
+          fwave(nv, 2, i) = beta(2)
+
+          ! Wave 3
+          fwave(1, 3, i) = beta(3)
+          fwave(mu, 3, i) = beta(3) * s(3, i)
+          fwave(nv, 3, i) = beta(3) * v_R
+
+          ! ! Output waves
+          fwave_sum = 0.0_real64
+          do mw=1,3
+               ! if (beta(mw) > 0.d0) then
+               !      print "('fwave = (', i1,', ',i2,')')", mw, i
+               !      print *, "beta(", mw, ") = ", beta(mw)
+               !      print *, fwave(:, mw, i)
+               ! end if
+               fwave_sum = fwave_sum + fwave(:, mw, i)
+          end do
+
+          do m=1,3
+               if (abs(delta(m) - fwave_sum(m)) > 1d-14) then !.and.         &
+                   ! abs(delta(m) - fwave_sum(m)) > 0.d0) then
+                    print *, "delta - (amdq + apdq) = ", delta - fwave_sum
+                    print "('(', i1,', ',i2,')')", mw, i
+                    ! stop
+               end if
+          end do
 
      end do
 
@@ -89,11 +132,17 @@ subroutine rpn2(ixy,maxm,meqn,mwaves,maux,mbc,mx,ql,qr,auxl,auxr,fwave,s,amdq,ap
                else if (s(mw, i) > 0.0_real64) then
                     apdq(:, i) = apdq(:, i) + fwave(:, mw, i)
                else
-                    ! amdq(:, i) = amdq(:, i) + 0.5_real64 * fwave(:, mw, i)
-                    ! apdq(:, i) = apdq(:, i) + 0.5_real64 * fwave(:, mw, i)
-                    continue
+                    amdq(:, i) = amdq(:, i) + 0.5_real64 * fwave(:, mw, i)
+                    apdq(:, i) = apdq(:, i) + 0.5_real64 * fwave(:, mw, i)
+                    stop
                end if
           end do
      end do
+
+     ! do i=2-mbc, mx+mbc
+     !      if (amdq(1, i) > 0.0_real64) then
+     !           print *, "Apdq, Amdq = ", amdq(1, i), apdq(1, i)
+     !      end if
+     ! end do
 
 end subroutine rpn2

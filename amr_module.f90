@@ -279,8 +279,7 @@ module amr_module
     logical    printout,matlabout,ncarout
 
     ! variables for conservation checking:
-    integer, parameter :: QR_K = selected_real_kind(32)
-    real (kind=real128) :: tmass0, tmom0, tu20
+    real (kind=real128) :: init_mass, init_momentum
 
     ! variables for specifying output format
     integer :: output_style, nstop, nout, iout

@@ -71,16 +71,24 @@ subroutine qinit(meqn,mbc,mx,my,xlower,ylower,dx,dy,q,maux,aux)
         call add_perturbation(meqn,mbc,mx,my,xlower,ylower,dx,dy,q,maux,aux)
     endif
 
-    ! All-shock
-    h_R = 1.0d0
-    u_R = -0.5d0
-    h_L = 1.0d0
-    u_L = 0.5d0
-    ! ! All-rarefaction
+    ! Dam-break
     ! h_R = 1.0d0
+    ! u_R = 0.d0
+    ! h_L = 1.050d0
+    ! h_L = 0.95d0
+    ! u_L = 0.0d0
+
+    ! All-shock
+    ! h_R = 1.0d0
+    ! u_R = -0.5d0
     ! h_L = 1.0d0
-    ! u_R = 0.5d0
-    ! u_L = -0.5d0
+    ! u_L = 0.5d0
+    
+    ! All-rarefaction
+    h_R = 1.0d0
+    h_L = 1.0d0
+    u_R = 0.5d0
+    u_L = -0.5d0
     
     do i=1, mx
         x = xlower + (i - 0.5d0) * dx

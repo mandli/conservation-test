@@ -31,21 +31,16 @@ def parse_amr_log(path=None):
                 elif line.split()[5] == 'mom':
                     momentum.append(float(line.split()[7]))
                     momentum_diff.append(float(line.split()[10]))
-                elif line.split()[5] == 'u**2':
-                    u2.append(float(line.split()[7]))
-                    u2_diff.append(float(line.split()[10]))
                 else:
                     raise ValueError("Invalid type of conservation found.")
 
     t = numpy.array(t)
     mass = numpy.array(mass)
     momentum = numpy.array(momentum)
-    u2 = numpy.array(u2)
     mass_diff = numpy.array(mass_diff)
     momentum_diff = numpy.array(momentum_diff)
-    u2_diff = numpy.array(u2_diff)
 
-    return [t, mass, momentum, u2, mass_diff, momentum_diff, u2_diff]
+    return [t, mass, momentum, mass_diff, momentum_diff]
 
 
 # def plot_conservation(experiments, base_path=None):
@@ -86,8 +81,8 @@ def plot_conservation(base_path=None):
 
     t2boundary = 100e3 / numpy.sqrt(9.8 * 3000)
 
-    fig, axs = plt.subplots(3, sharex=True)
-    titles = ['Mass', 'Momentum', r"$|\vec{u}|^2$"]
+    fig, axs = plt.subplots(2, sharex=True)
+    titles = ['Mass', 'Momentum']
     path = os.path.join(base_path, "_output")
     data  = parse_amr_log(path)
     t = data[0]
