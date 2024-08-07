@@ -56,10 +56,12 @@ SOURCES = \
   ./qinit.f90 \
   $(CLAW)/riemann/src/rpt2_geoclaw.f \
   $(CLAW)/riemann/src/geoclaw_riemann_utils.f \
-  $(CLAW)/riemann/src/rpn2_geoclaw.f
+  ./rpn2_swe_hll.f90
+
+#   $(CLAW)/riemann/src/rpn2_geoclaw.f
 
   
-#   ./rpn2_swe_hll.f90 \
+  
 
 #-------------------------------------------------------------------
 # Include Makefile containing standard definitions and make options:

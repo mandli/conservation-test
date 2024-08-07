@@ -42,60 +42,23 @@ def parse_amr_log(path=None):
 
     return [t, mass, momentum, mass_diff, momentum_diff]
 
-
-# def plot_conservation(experiments, base_path=None):
-
-#     if base_path is None:
-#         base_path = os.getcwd()
-
-#     t2boundary = 100e3 / numpy.sqrt(9.8 * 3000)
-
-#     fig, axes = plt.subplots(3, len(experiments))
-#     if len(experiments) == 1:
-#         print(axes.shape)
-#     titles = ['Mass', 'Momentum', r"$|\vec{u}|^2$"]
-#     for (j, experiment) in enumerate(experiments):
-
-#         # experiment_string = f"{experiment[0]}_{experiment[1]}_{experiment[2]}"
-#         # path = os.path.join(base_path, experiment_string + "_output")
-#         path = os.path.join(base_path, "_output")
-#         data  = parse_amr_log(path)
-#         t = data[0]
-
-#         # Modify mass plot to do difference
-#         data[1] = data[1] / data[1][0] - 1.0
-
-#         for (i, field_title) in enumerate(titles):
-#             axes[i][j].plot(t, data[i + 1], 'b-', label=field_title)
-#             axes[i][j].ticklabel_format(style="plain", useMathText=True)
-#             axes[i][j].set_title(field_title + " - " + experiment_string)
-#             axes[i][j].grid(True)
-
-#     return fig
-
-
 def plot_conservation(base_path=None):
 
     if base_path is None:
         base_path = os.getcwd()
 
-    t2boundary = 100e3 / numpy.sqrt(9.8 * 3000)
+    data = parse_amr_log(os.path.join(base_path, "_output"))
+    t = data[0]
+    data[1] = data[1] / data[1][0] - 1.0
 
     fig, axs = plt.subplots(2, sharex=True)
     titles = ['Mass', 'Momentum']
-    path = os.path.join(base_path, "_output")
-    data  = parse_amr_log(path)
-    t = data[0]
-
-    # Modify mass plot to do difference
-    data[1] = data[1] / data[1][0] - 1.0
-
     for (i, field_title) in enumerate(titles):
         axs[i].plot(t, data[i + 1], 'b-', label=field_title)
         axs[i].ticklabel_format(style="plain", useMathText=True)
         axs[i].set_title(field_title)
         axs[i].grid(True)
-        axs[i].set_xlim([0, 20])
+        axs[i].set_xlim([t.min(), t.max()])
 
     return fig
 
