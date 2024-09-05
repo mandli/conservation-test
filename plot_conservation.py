@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
 import os
+import sys
 
-import numpy
+import numpy as np
 import matplotlib.pyplot as plt
 
 import clawpack.geoclaw.surge.plot as surgeplot
@@ -34,28 +35,23 @@ def parse_amr_log(path=None):
                 else:
                     raise ValueError("Invalid type of conservation found.")
 
-    t = numpy.array(t)
-    mass = numpy.array(mass)
-    momentum = numpy.array(momentum)
-    mass_diff = numpy.array(mass_diff)
-    momentum_diff = numpy.array(momentum_diff)
+    t = np.array(t)
+    mass = np.array(mass)
+    momentum = np.array(momentum)
+    mass_diff = np.array(mass_diff)
+    momentum_diff = np.array(momentum_diff)
 
     return [t, mass, momentum, mass_diff, momentum_diff]
 
-def plot_conservation(base_path=None):
-
-    if base_path is None:
-        base_path = os.getcwd()
-
-    data = parse_amr_log(os.path.join(base_path, "_output"))
+def plot_conservation(data):
     t = data[0]
-    data[1] = data[1] / data[1][0] - 1.0
+    # data[1] = data[1] / data[1][0] - 1.0
 
     fig, axs = plt.subplots(2, sharex=True)
+    fig.suptitle("Differences")
     titles = ['Mass', 'Momentum']
     for (i, field_title) in enumerate(titles):
-        axs[i].plot(t, data[i + 1], 'b-', label=field_title)
-        axs[i].ticklabel_format(style="plain", useMathText=True)
+        axs[i].plot(t, data[i + 3], 'b-', label=field_title)
         axs[i].set_title(field_title)
         axs[i].grid(True)
         axs[i].set_xlim([t.min(), t.max()])
@@ -64,30 +60,20 @@ def plot_conservation(base_path=None):
 
 
 if __name__ == '__main__':
-    # base_path = os.path.join(os.environ.get('DATA_PATH', os.getcwd()),
-    #                          "conservation_tests")
-    experiments = []
-    # Experiment 1
-    # for init_condition in ['hump']:
-    #     for order in [1, 2]:
-    #         for transverse_waves in [0, 1, 2]:
-    #             experiments.append([order, transverse_waves, init_condition])
+    # Load data
+    if len(sys.argv) <= 1:
+        base_path = os.getcwd()
+    else:
+        base_path = sys.argv[1]
+    data = parse_amr_log(os.path.join(os.getcwd(), "_output"))
+    
+    # Print out max diffs
+    index = data[3].argmax()
+    print(f"max mass difference = {data[3][index]} at t = {data[0][index]}")
+    index = data[4].argmax()
+    print(f"max momentum difference = {data[4][index]} at t = {data[0][index]}")
 
-    # Experiment 2
-    # for init_condition in ['hump', 'pressure']:
-    #     for order in [1, 2]:
-    #         for transverse_waves in [0]:
-    #             experiments.append([order, transverse_waves, init_condition])
-
-    # Experiment 3
-    # for init_condition in ['step',]:
-    #     for order in [1]:
-    #         for transverse_waves in [0]:
-    #             experiments.append([order, transverse_waves, init_condition])
-
-    # plot_conservation(experiments, base_path=os.getcwd())
-
-    # Direct Local
-    plot_conservation()
+    # Plot conservation
+    plot_conservation(data)
 
     plt.show()
