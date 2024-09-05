@@ -51,7 +51,7 @@ subroutine conck(level, nvar, naux, time, rest)
             do j  = nghost+1, mjtot-nghost
                 do i  = nghost+1, mitot-nghost
                     mass = mass + alloc(iadd(1,i,j)) 
-                    momentum = momentum + abs(alloc(iadd(2,i,j))) + abs(alloc(iadd(3,i,j)))
+                    momentum = momentum + alloc(iadd(2,i,j)) + alloc(iadd(3,i,j))
                 end do
             end do
         else
